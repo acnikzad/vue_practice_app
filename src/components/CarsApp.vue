@@ -29,13 +29,38 @@
       </select>
 
       <select v-if="selectedCategory" v-model="selectedDrivetrain">
-        <option disabled value="">Select a category</option>
+        <option disabled value="">Select a drivetrain</option>
         <option v-for="drivetrain in drivetrains" :key="drivetrain" :value="drivetrain">
             {{ drivetrain }}
         </option>
       </select>
 
+      <div v-if="selectedDrivetrain">
+        <button @click="addCar">Add car </button>
+      </div>
     </div>
+    <div v-for="car in cars" :key="car" :value="car" :style="getCategoryStyle(car.category)">
+        <h4>Year: </h4><p>{{ car.year }}</p>
+        <h4>Make: </h4><p>{{ car.make }}</p>
+        <h4>Model: </h4><p>{{ car.model }}</p>
+        <h4>Category: </h4><p>{{ car.category }}</p>
+        <h4>Drivetrain: </h4><p>{{ car.drivetrain }}</p>
+    </div>
+    <div v-for="car in filteredAndSortedCars" :key="car.make + car.model">
+        <p>{{ car.make }} {{ car.model }} - {{ car.category }} - {{ car.drivetrain }}</p>
+    </div>
+    <select v-model="filterCategory">
+        <option value="">Filter by Category</option>
+        <option v-for="category in categories" :key="category" :value="category">{{ category }}</option>
+    </select>
+
+        <!-- Filtering by Drivetrain -->
+    <select v-model="filterDrivetrain">
+        <option value="">Filter by Drivetrain</option>
+        <option v-for="drivetrain in drivetrains" :key="drivetrain" :value="drivetrain">{{ drivetrain }}</option>
+    </select>
+
+    <button @click="toggleSort">Toggle Sort</button>
   </template>
 
 <script>
@@ -93,19 +118,22 @@ export default {
                 "Automatic",
                 "Manual",
                 "CVT"
-            ]
+            ],
+            isSortedAsc: true, // Sorting direction flag
+            filterCategory: '', // Selected filter for category
+            filterDrivetrain: '', // Selected filter for drivetrain
 
         }
     },
     methods: {
         addCar() {
             let newCar = {
-                year: this.year,
-                make: this.make,
-                model: this.model,
-                category: this.category,
-                milleage: this.mileage,
-                drivetrain: this.drivetrain,
+                year: this.selectedYear,
+                make: this.selectedMake,
+                model: this.selectedModel,
+                category: this.selectedCategory,
+                milleage: this.selectedMileage,
+                drivetrain: this.selectedDrivetrain,
             }
             this.cars.push(newCar),
             alert('Added a Car'),
@@ -116,13 +144,53 @@ export default {
             this.category = '',
             this.mileage = '',
             this.drivetrain = ''
-        }
+        }, 
 
+        toggleSort() {
+            this.isSortedAsc = !this.isSortedAsc;
+        },
+
+        getCategoryStyle(category) {
+            const styles = {
+                Coupe: { backgroundColor: 'lightblue' },
+                SUV: { backgroundColor: 'lightgreen' },
+                Wagon: { backgroundColor: 'lightcoral' },
+                Truck:  { backgroundColor: 'lightsalmon' },
+                Hybrid: { backgroundColor: 'lightgray'},
+                EV: { backgroundColor: 'lightgreen'}
+            }
+            return styles[category] || {};
+        }
     },
     computed: {
         selectedMakeModels() {
             const make = this.makesWithModels.find(make => make.make === this.selectedMake);
             return make ? make.models : [];
+        },
+
+        filteredAndSortedCars() {
+            let result = this.cars;
+
+            // Filter by category if selected
+            if (this.filterCategory) {
+            result = result.filter(car => car.category === this.filterCategory);
+            }
+
+            // Filter by drivetrain if selected
+            if (this.filterDrivetrain) {
+            result = result.filter(car => car.drivetrain === this.filterDrivetrain);
+            }
+
+            // Sort based on the flag
+            result.sort((a, b) => {
+            if (this.isSortedAsc) {
+                return a.make.localeCompare(b.make); // Sort by make asc
+            } else {
+                return b.make.localeCompare(a.make); // Sort by make desc
+            }
+            });
+
+            return result;
         }
     }
 }
